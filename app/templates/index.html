@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .restaurant-container {
+            display: flex;
+            flex-wrap: wrap;
+            flex-direction: row;
+            align-items: center;
+        }
+
+        .restaurant {
+            padding: 1em;
+            border: 1px solid black;
+            border-radius: 1em;
+            margin: 1em;
+            background-color: lightgray;
+        }
+    </style>
+    <title>Document</title>
+</head>
+
+<body>
+    <div class="restaurant-container">
+        {% for item in r %}
+            <div class="restaurant">
+                <h3>{{ item.Restaurant_Name }}</h3>
+                <p>{{ item.Address }}</p>
+                <p>
+                    {% for cat in item.Category %}
+                        {{ cat }} |
+                    {% endfor %}
+                </p>
+            </div>
+        {% endfor %}
+    </div>
+</body>
+
+</html>
