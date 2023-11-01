@@ -36,24 +36,16 @@ def indexName(name):
 
 @restaurantsAll.route('/restaurants/all')
 def all_restaurants():
-    # pipeline = [{"$project": {"Restaurant_Name": "$Restaurant_Name"}}]
     pipeline = []
     res = list(restaurantsCol.aggregate(pipeline))
     res_str = ''
 
-    # returns all restaurant names, and Ids in an array
-    # for i in res:
-    #     res_str += f'{i}<br/>'
-    # return res_str
-
-    # returns all restaurant namea in a html file
     return render_template('index.html', r=res)
 
 @restaurantsAllType.route('/restaurants/all/type/<type>')
 def all_restaurants_cat(type):
     pipeline = [
         {"$match": {"Category": f"{type}"}}
-        # , {"$project": {"Restaurant_Name": "$Restaurant_Name"}}
     ]
     res = list(restaurantsCol.aggregate(pipeline))
 
