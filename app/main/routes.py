@@ -9,6 +9,7 @@ main = Blueprint('main', __name__)
 name = Blueprint('name', __name__)
 restaurantsAll = Blueprint('restaurants', __name__)
 restaurantsAllType = Blueprint('restaurants_cat', __name__)
+restaurantsAllGT = Blueprint('restaurants_gt', __name__)
 
 
 #ca = certifi.where()
@@ -36,27 +37,19 @@ def indexName(name):
 
 @restaurantsAll.route('/restaurants/all')
 def all_restaurants():
-    # pipeline = [{"$project": {"Restaurant_Name": "$Restaurant_Name"}}]
     pipeline = []
     res = list(restaurantsCol.aggregate(pipeline))
-    res_str = ''
-
-    # returns all restaurant names, and Ids in an array
-    # for i in res:
-    #     res_str += f'{i}<br/>'
-    # return res_str
-
-    # returns all restaurant namea in a html file
-    return render_template('index.html', r=res)
+    return render_template('index.html', r = res)
 
 @restaurantsAllType.route('/restaurants/all/type/<type>')
 def all_restaurants_cat(type):
-    pipeline = [
-        {"$match": {"Category": f"{type}"}}
-        # , {"$project": {"Restaurant_Name": "$Restaurant_Name"}}
-    ]
+    pipeline = [{"$match": {"Category": f"{type}"}}]
     res = list(restaurantsCol.aggregate(pipeline))
+    return render_template('index.html', r = res)
 
-    # returns all restaurant namea in a html file
-    return render_template('index.html', r=res)
-
+@restaurantsAllGT.route('/restaurants/all/gte/<test>')
+def all_restaurants_gt(test):
+    pipeline = [{"$match": {"Dining_Rating": {"$gte": float(test)}}}]
+    res = list(restaurantsCol.aggregate(pipeline))
+    return "hello"
+    #return render_template('index.html', r = res)
