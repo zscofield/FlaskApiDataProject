@@ -1,14 +1,17 @@
-from flask import Flask, Blueprint, render_template, jsonify
+from flask import Flask, Blueprint, Response, render_template
 from ..extensions import mongo
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 import ssl
+from bson.json_util import dumps, loads
 #import certifi
 
 main = Blueprint('main', __name__)
 name = Blueprint('name', __name__)
 restaurantsAll = Blueprint('restaurants', __name__)
 restaurantsAllType = Blueprint('restaurants_cat', __name__)
+restaurantsAllRating = Blueprint('restaurants_rating', __name__)
+testing = Blueprint('testing', __name__)
 
 
 #ca = certifi.where()
@@ -49,6 +52,32 @@ def all_restaurants_cat(type):
     ]
     res = list(restaurantsCol.aggregate(pipeline))
 
-    # returns all restaurant namea in a html file
-    return render_template('index.html', r=res)
+    return Response(dumps(res), mimetype='application/json')
+
+
+
+@restaurantsAllRating.route('/restaurants/all/rating/<rating>')
+def all_restaurants_rating(rating):
+    pipeline = [
+        {"$match": {"Dining_Rating": {"$gte": float(rating)}}}
+    ]
+    res = list(restaurantsCol.aggregate(pipeline))
+
+    return Response(dumps(res), mimetype='application/json')
+
+
+
+
+@testing.route('/restaurants/all/<type>/<rating>/<count>')
+def all_restaurants_rating(type ,rating , count):
+    pipeline = [
+        {"$match": {"Category" : f"{type}"  , "Dining_Rating" : { "$gte" : 3.0 },
+"Dining_Review_Count" : {"$gte": 100 } , "Dining_Review_Count" : {"$gte": float(count) }  }}
+    ]
+    res = list(restaurantsCol.aggregate(pipeline) )
+
+    return Response( dumps(res), mimetype='application/json' ) 
+
+
+
 
