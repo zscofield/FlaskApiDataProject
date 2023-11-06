@@ -23,7 +23,12 @@ try:
 except Exception as e:
     print(e)
 
-comps = ["gte", "lte"]
+# CONSTANTS
+COMPS = ["gte", "lte"]
+BLANK_RES = Response(dumps([]), mimetype='application/json')
+def res_json(pipeline):
+    res = list(restaurantsCol.aggregate(pipeline))
+    return Response(dumps(res), mimetype='application/json')
 
 @main.route('/')
 def index():
@@ -32,34 +37,40 @@ def index():
 @main.route('/restaurants/all')
 def restaurants_all():
     pipeline = []
-    res = list(restaurantsCol.aggregate(pipeline))
-
-    return Response(dumps(res), mimetype='application/json')
+    return res_json(pipeline)
 
 @main.route('/restaurants/type/<type>')
 def restaurants_cat(type):
     pipeline = [
         {"$match": {"Category": f"{type}"}}
     ]
-    res = list(restaurantsCol.aggregate(pipeline))
-
-    return Response(dumps(res), mimetype='application/json')
+    return res_json(pipeline)
 
 @main.route('/restaurants/rating/<comp>/<rating>')
 def restaurants_rating(comp, rating):
-    if comp in comps:
+    if comp in COMPS:
         pipeline = [
             {"$match": {"Dining_Rating": {f"${comp}": float(rating)}}}
         ]
-        res = list(restaurantsCol.aggregate(pipeline))
+        return res_json(pipeline)
     else:
-        res = []
+        return BLANK_RES
 
-    return Response(dumps(res), mimetype='application/json')
+@main.route('/restaurants/type/<type>/rating/count/<rcount>')
+def restaurants_type_rating_count(type, rcount):
+    pipeline = [
+        {
+            "$match": {
+                "Category": f"{type}",
+                "Dining_Review_Count": {"$gte": rcount}
+            }
+        }
+    ]
+    return res_json(pipeline)
 
 @main.route('/restaurants/type/<type>/rating/<comp>/<rating>')
 def restaurants_type_rating(type, comp, rating):
-    if comp in comps:
+    if comp in COMPS:
         pipeline = [
             {
                 "$match": {
@@ -68,8 +79,14 @@ def restaurants_type_rating(type, comp, rating):
                 }
             }
         ]
-        res = list(restaurantsCol.aggregate(pipeline))
+        return res_json(pipeline)
     else:
-        res = []
+        return BLANK_RES
 
-    return Response(dumps(res), mimetype='application/json')
+@main.route('/restaurants/price2/<comp>/<price>')
+def restaurants_price2(comp, price):
+    if comp in COMPS:
+        pipeline = [{"$match": {"Pricing_for_2": {f"${comp}": price}}}]
+        return res_json(pipeline)
+    else:
+        return BLANK_RES
