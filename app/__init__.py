@@ -5,10 +5,6 @@ from .extensions import mongo
 
 #routes
 from .main.routes import main
-from .main.routes import name
-from .main.routes import restaurantsAll
-from .main.routes import restaurantsAllType
-from .main.routes import restaurantsAllRating
 
 def create_app():
     #Creating app instance
@@ -20,9 +16,5 @@ def create_app():
 
     #Registering routes
     app.register_blueprint(main)
-    app.register_blueprint(name)
-    app.register_blueprint(restaurantsAll)
-    app.register_blueprint(restaurantsAllType)
-    app.register_blueprint(restaurantsAllRating)
 
     return app

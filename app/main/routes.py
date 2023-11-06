@@ -7,11 +7,6 @@ from bson.json_util import dumps, loads
 #import certifi
 
 main = Blueprint('main', __name__)
-name = Blueprint('name', __name__)
-restaurantsAll = Blueprint('restaurants', __name__)
-restaurantsAllType = Blueprint('restaurants_cat', __name__)
-restaurantsAllRating = Blueprint('restaurants_rating', __name__)
-
 
 #ca = certifi.where()
 uri = "mongodb+srv://zach:qgUwp5xFOh4hPiSe@cluster0.mh1tve4.mongodb.net/?retryWrites=true&w=majority&ssl=true&ssl_cert_reqs=CERT_NONE"
@@ -28,43 +23,53 @@ try:
 except Exception as e:
     print(e)
 
+comps = ["gte", "lte"]
+
 @main.route('/')
 def index():
     return '<h1>Hello</h1>'
 
-@name.route('/<name>')
-def indexName(name):
-    return '<h1>Hello {}</h1>'.format(name)
-
-@restaurantsAll.route('/restaurants/all')
-def all_restaurants():
-    # pipeline = [{"$project": {"Restaurant_Name": "$Restaurant_Name"}}]
+@main.route('/restaurants/all')
+def restaurants_all():
     pipeline = []
     res = list(restaurantsCol.aggregate(pipeline))
-    res_str = ''
-
-    # returns all restaurant names, and Ids in an array
-    # for i in res:
-    #     res_str += f'{i}<br/>'
-    # return res_str
 
     return Response(dumps(res), mimetype='application/json')
 
-@restaurantsAllType.route('/restaurants/all/type/<type>')
-def all_restaurants_cat(type):
+@main.route('/restaurants/type/<type>')
+def restaurants_cat(type):
     pipeline = [
         {"$match": {"Category": f"{type}"}}
-        # , {"$project": {"Restaurant_Name": "$Restaurant_Name"}}
     ]
     res = list(restaurantsCol.aggregate(pipeline))
 
     return Response(dumps(res), mimetype='application/json')
 
-@restaurantsAllRating.route('/restaurants/all/rating/<rating>')
-def all_restaurants_rating(rating):
-    pipeline = [
-        {"$match": {"Dining_Rating": {"$gte": float(rating)}}}
-    ]
-    res = list(restaurantsCol.aggregate(pipeline))
+@main.route('/restaurants/rating/<comp>/<rating>')
+def restaurants_rating(comp, rating):
+    if comp in comps:
+        pipeline = [
+            {"$match": {"Dining_Rating": {f"${comp}": float(rating)}}}
+        ]
+        res = list(restaurantsCol.aggregate(pipeline))
+    else:
+        res = []
+
+    return Response(dumps(res), mimetype='application/json')
+
+@main.route('/restaurants/type/<type>/rating/<comp>/<rating>')
+def restaurants_type_rating(type, comp, rating):
+    if comp in comps:
+        pipeline = [
+            {
+                "$match": {
+                    "Category": f"{type}",
+                    "Dining_Rating": {f"${comp}": float(rating)}
+                }
+            }
+        ]
+        res = list(restaurantsCol.aggregate(pipeline))
+    else:
+        res = []
 
     return Response(dumps(res), mimetype='application/json')
