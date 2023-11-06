@@ -10,6 +10,7 @@ main = Blueprint('main', __name__)
 name = Blueprint('name', __name__)
 restaurantsAll = Blueprint('restaurants', __name__)
 restaurantsAllType = Blueprint('restaurants_cat', __name__)
+restaurantsAllRating = Blueprint('restaurants_rating', __name__)
 
 
 #ca = certifi.where()
@@ -57,3 +58,11 @@ def all_restaurants_cat(type):
     # returns all restaurant namea in a html file
     return render_template('index.html', r=res)
 
+@restaurantsAllRating.route('/restaurants/all/rating/<rating>')
+def all_restaurants_rating(rating):
+    pipeline = [
+        {"$match": {"Dining_Rating": {"$gte": float(rating)}}}
+    ]
+    res = list(restaurantsCol.aggregate(pipeline))
+
+    return Response(dumps(res), mimetype='application/json')
