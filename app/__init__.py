@@ -8,7 +8,9 @@ from .main.routes import main
 from .main.routes import name
 from .main.routes import restaurantsAll
 from .main.routes import restaurantsAllType
-from .main.routes import restaurantsAllRating
+from .main.routes import restaurantsAllRatingGTE
+from .main.routes import restaurantsAllRatingLTE
+from .main.routes import restaurantsAllTypeLocation
 
 def create_app():
     #Creating app instance
@@ -23,6 +25,8 @@ def create_app():
     app.register_blueprint(name)
     app.register_blueprint(restaurantsAll)
     app.register_blueprint(restaurantsAllType)
-    app.register_blueprint(restaurantsAllRating)
+    app.register_blueprint(restaurantsAllRatingGTE)
+    app.register_blueprint(restaurantsAllRatingLTE)
+    app.register_blueprint(restaurantsAllTypeLocation)
 
     return app
