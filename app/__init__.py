@@ -8,7 +8,6 @@ from .main.routes import main
 from .main.routes import name
 from .main.routes import restaurantsAll
 from .main.routes import restaurantsAllType
-from .main.routes import restaurantsAllGT
 
 def create_app():
     #Creating app instance
@@ -23,6 +22,5 @@ def create_app():
     app.register_blueprint(name)
     app.register_blueprint(restaurantsAll)
     app.register_blueprint(restaurantsAllType)
-    app.register_blueprint(restaurantsAllGT)
 
     return app
