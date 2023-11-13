@@ -15,6 +15,7 @@ uri = "mongodb+srv://zach:qgUwp5xFOh4hPiSe@cluster0.mh1tve4.mongodb.net/?retryWr
 client = MongoClient(uri)
 db = client.Pune # db reference
 restaurantsCol = db.restaurants
+neighborhoodsCol = db.neighborhoods
 
 try:
     client.admin.command('ping')
@@ -23,7 +24,20 @@ try:
 except Exception as e:
     print(e)
 
-comps = ["gte", "lte"]
+# CONSTANTS
+COMPS = ["gte", "lte"]
+def res_json(res):
+    return Response(dumps(res), mimetype='application/json')
+BLANK_RES = res_json([])
+def res_json_pipeline(col, pipeline):
+    res = list(col.aggregate(pipeline))
+    return res_json(res)
+def res_json_find(col, filter):
+    res = list(col.find(filter))
+    return res_json(res)
+def res_json_find_one(col, filter):
+    res = col.find_one(filter)
+    return res_json(res)
 
 @main.route('/')
 def index():
@@ -31,51 +45,127 @@ def index():
 
 @main.route('/restaurants/all')
 def restaurants_all():
-    pipeline = []
-    res = list(restaurantsCol.aggregate(pipeline))
-
-    # returns all restaurant names, and Ids in an array
-    # for i in res:
-    #     res_str += f'{i}<br/>'
-    # return res_str
-
-    return Response(dumps(res), mimetype='application/json')
+    return res_json_find(restaurantsCol, {})
 
 @main.route('/restaurants/type/<type>')
 def restaurants_cat(type):
-    pipeline = [
-        {"$match": {"Category": f"{type}"}}
-    ]
-    res = list(restaurantsCol.aggregate(pipeline))
-
-    # returns all restaurant namea in a html file
-    return render_template('index.html', r=res)
+    return res_json_find(
+        restaurantsCol,
+        {
+            "Category": f"{type}"
+        }
+    )
 
 @main.route('/restaurants/rating/<comp>/<rating>')
 def restaurants_rating(comp, rating):
-    if comp in comps:
-        pipeline = [
-            {"$match": {"Dining_Rating": {f"${comp}": float(rating)}}}
-        ]
-        res = list(restaurantsCol.aggregate(pipeline))
+    if comp in COMPS:
+        return res_json_find(restaurantsCol, {"Dining_Rating": {f"${comp}": float(rating)}})
     else:
-        res = []
+        return BLANK_RES
 
-    return Response(dumps(res), mimetype='application/json')
+@main.route('/restaurants/type/<type>/rating/count/<rcount>')
+def restaurants_type_rating_count(type, rcount):
+    return res_json_find(
+        restaurantsCol,
+        {
+            "Category": f"{type}",
+            "Dining_Review_Count": {"$gte": rcount}
+        }
+    )
 
 @main.route('/restaurants/type/<type>/rating/<comp>/<rating>')
 def restaurants_type_rating(type, comp, rating):
-    if comp in comps:
-        pipeline = [
+    if comp in COMPS:
+        return res_json_find(
+            restaurantsCol,
             {
-                "$match": {
-                    "Category": f"{type}",
-                    "Dining_Rating": {f"${comp}": float(rating)}
+                "Category": f"{type}",
+                "Dining_Rating": {f"${comp}": float(rating)}
+            }
+        )
+    else:
+        return BLANK_RES
+
+@main.route('/restaurants/price2/<comp>/<price>')
+def restaurants_price2(comp, price):
+    if comp in COMPS:
+        return res_json_find(restaurantsCol, {"Pricing_for_2": {f"${comp}": price}})
+    else:
+        return BLANK_RES
+    
+@main.route('/restaurants/near/<lat>,<long>/distance/<distance>')
+def restaurants_near(lat, long, distance):
+    lat = float(lat)
+    long = float(long)
+    distance = float(distance)
+    filter = {
+        "Location": {
+            "$near": {
+                "$geometry": {
+                    "type": "Point",
+                    "coordinates": [long, lat]
+                },
+                "$maxDistance": distance
+            }
+        }
+    }
+    return res_json_find(restaurantsCol, filter)
+
+@main.route('/neighborhoods/all')
+def neighborhoods_all():
+    return res_json_find(neighborhoodsCol, {})
+
+@main.route('/neighborhoods/location/<lat>,<long>')
+def neighborhoods_loc(lat, long):
+    lat = float(lat)
+    long = float(long)
+    return res_json_find_one(
+        neighborhoodsCol,
+        {
+            "geometry": {
+                "$geoIntersects":  {
+                    "$geometry": {
+                        "type": "Point",
+                        "coordinates": [long, lat]
+                    }
                 }
             }
-        ]
-        res = list(restaurantsCol.aggregate(pipeline))
-    else:
-        res = []
+        }
+    )
 
-    return Response(dumps(res), mimetype='application/json')
+@main.route('/restaurants/neighborhood/<n_name>')
+def restaurants_neighborhood(n_name):
+    n = neighborhoodsCol.find_one({"properties.name": {"$regex": f"{n_name}", "$options": "i"}})
+    filter = {
+        "Location": {
+            "$geoWithin": {
+                "$geometry": n["geometry"]
+            }
+        }
+    }
+    return res_json_find(restaurantsCol, filter)
+
+@main.route('/restaurants/neighborhood/location/<lat>,<long>')
+def restaurants_neighborhood_loc(lat, long):
+    lat = float(lat)
+    long = float(long)
+    n = neighborhoodsCol.find_one(
+        {
+            "geometry": {
+                "$geoIntersects": {
+                    "$geometry": {
+                        "type": "Point",
+                        "coordinates": [long, lat]
+                    }
+                }
+            }
+        }
+    )
+    filter = {
+        "Location": {
+            "$geoWithin": {
+                "$geometry": n["geometry"]
+            }
+        }
+    }
+    return res_json_find(restaurantsCol, filter)
